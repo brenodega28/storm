@@ -1,6 +1,6 @@
 import type {
   DatabaseField,
-  DatabaseFilter,
+  DatabaseFilterGroup,
   DatabaseResult,
   Payload,
 } from "./types";
@@ -14,14 +14,14 @@ export abstract class BaseDriver<T> {
 
   getOne(
     tableName: string,
-    filters: DatabaseFilter[]
+    filters: DatabaseFilterGroup
   ): Promise<DatabaseResult> {
     throw Error("Not Implemented");
   }
 
   getMany(
     tableName: string,
-    filters?: DatabaseFilter[]
+    filters: DatabaseFilterGroup
   ): Promise<DatabaseResult[]> {
     throw Error("Not Implemented");
   }
@@ -30,11 +30,15 @@ export abstract class BaseDriver<T> {
     throw Error("Not Implemented");
   }
 
-  update(tableName: string, filters: DatabaseFilter[], payload: Payload): void {
+  update(
+    tableName: string,
+    filters: DatabaseFilterGroup,
+    payload: Payload
+  ): void {
     throw Error("Not Implemented");
   }
 
-  delete(tableName: string, filters: DatabaseFilter[]) {
+  delete(tableName: string, filters: DatabaseFilterGroup) {
     throw Error("Not Implemented");
   }
 }

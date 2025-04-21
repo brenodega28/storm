@@ -1,4 +1,3 @@
-//@ts-expect-error path exists lol
 import path from "path";
 import type { BaseDriver } from "./drivers/base";
 import { SQLiteDriver } from "./drivers/sqlite";
@@ -6,10 +5,13 @@ import type {
   DatabaseConfig,
   DatabaseField,
   DatabaseFilter,
+  DatabaseFilterGroup,
   Payload,
 } from "./drivers/types";
 import type { Field } from "./fields";
 import type { ModelConstructor } from "./models";
+import { isGroupFilter } from "./query";
+import type { Filter, FilterGrouping, PartialModel } from "./types";
 
 export class Database {
   driver: BaseDriver<any>;
@@ -66,9 +68,9 @@ export class Database {
     );
   }
 
-  filtersDictToDatabaseFilter(
+  filterDictToDatabaseFilters<T>(
     model: ModelConstructor,
-    filters: Record<string, any>
+    filters: PartialModel<T>
   ): DatabaseFilter[] {
     const dbFilters = this.entryToDatabaseValue(model, filters);
     return Object.entries(dbFilters).map(([key, value]) => ({
@@ -76,6 +78,25 @@ export class Database {
       comparator: "=",
       value,
     }));
+  }
+
+  filterToDatabaseFilter<T>(
+    model: ModelConstructor,
+    filter: Filter<T>
+  ): DatabaseFilterGroup {
+    if (isGroupFilter(filter)) {
+      return {
+        operator: (filter as FilterGrouping<T>).operator,
+        filters: (filter as FilterGrouping<T>).filters.map((f) =>
+          this.filterToDatabaseFilter(model, f)
+        ),
+      };
+    }
+
+    return {
+      operator: "and",
+      filters: this.filterDictToDatabaseFilters(model, filter),
+    };
   }
 
   async createModelTableIfNotExists(model: ModelConstructor) {

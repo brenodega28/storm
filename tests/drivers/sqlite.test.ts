@@ -33,23 +33,23 @@ describe("SQLite Tests", () => {
       { name: "'Ana'", age: 27 },
     ]);
 
-    const result = await db.driver.getMany("user");
+    const result = await db.driver.getMany("user", { filters: [] });
 
     expect(result[0].name).toBe("Breno");
     expect(result[1].name).toBe("Ana");
   });
 
   test("It gets users", async () => {
-    const result = await db.driver.getMany("user");
+    const result = await db.driver.getMany("user", { filters: [] });
 
     expect(result[0].name).toBe("Breno");
     expect(result[1].name).toBe("Ana");
   });
 
   test("It gets Ana", async () => {
-    const result = await db.driver.getOne("user", [
-      { field: "name", comparator: "=", value: "'Ana'" },
-    ]);
+    const result = await db.driver.getOne("user", {
+      filters: [{ field: "name", comparator: "=", value: "'Ana'" }],
+    });
 
     expect(result.name).toBe("Ana");
   });
@@ -57,29 +57,31 @@ describe("SQLite Tests", () => {
   test("It updates Ana age", async () => {
     await db.driver.update(
       "user",
-      [{ field: "name", comparator: "=", value: "'Ana'" }],
+      {
+        filters: [{ field: "name", comparator: "=", value: "'Ana'" }],
+      },
       { age: 1 }
     );
-    const ana = await db.driver.getOne("user", [
-      { field: "name", comparator: "=", value: "'Ana'" },
-    ]);
+    const ana = await db.driver.getOne("user", {
+      filters: [{ field: "name", comparator: "=", value: "'Ana'" }],
+    });
 
     expect(ana.age).toBe(1);
   });
 
   test("It updates all ages", async () => {
-    await db.driver.update("user", [], { age: 2 });
-    const result = await db.driver.getMany("user");
+    await db.driver.update("user", { filters: [] }, { age: 2 });
+    const result = await db.driver.getMany("user", { filters: [] });
 
     expect(result[0].age).toBe(2);
     expect(result[1].age).toBe(2);
   });
 
   test("It deletes Ana", async () => {
-    await db.driver.delete("user", [
-      { field: "name", comparator: "=", value: "'Ana'" },
-    ]);
-    const result = await db.driver.getMany("user");
+    await db.driver.delete("user", {
+      filters: [{ field: "name", comparator: "=", value: "'Ana'" }],
+    });
+    const result = await db.driver.getMany("user", { filters: [] });
 
     expect(result.length).toBe(1);
     expect(result[0].name).toBe("Breno");

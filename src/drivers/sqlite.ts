@@ -4,6 +4,7 @@ import type {
   DatabaseConfig,
   DatabaseField,
   DatabaseFilter,
+  DatabaseFilterGroup,
   DatabaseResult,
   FieldConstraints,
   FieldTypes,
@@ -46,10 +47,21 @@ export class SQLiteDriver extends BaseDriver<Database> {
     return databaseConstraints.join(" ");
   }
 
-  toDatabaseWhere(filters: DatabaseFilter[]): string {
-    return filters
-      .map((f) => `${f.field} ${f.comparator} ${f.value}`)
-      .join(" AND ");
+  toDatabaseWhere(filters: DatabaseFilterGroup): string {
+    if (filters.filters.length === 0) return "";
+    const filterStr = filters.filters
+      .map((f) => {
+        if ("operator" in f) return this.toDatabaseWhere(f);
+
+        return `${(f as DatabaseFilter).field} ${
+          (f as DatabaseFilter).comparator
+        } ${(f as DatabaseFilter).value}`;
+      })
+      .join(` ${filters.operator || "and"} `.toUpperCase());
+
+    if (filters.filters.length > 1) return `(${filterStr})`;
+
+    return filterStr;
   }
 
   toDatabaseType(type: FieldTypes): string {
@@ -69,7 +81,7 @@ export class SQLiteDriver extends BaseDriver<Database> {
     }
   }
 
-  createTable(tableName: string, fields: DatabaseField[]) {
+  createTable(tableName: string, fields: DatabaseField<any>[]) {
     const preparedFields = fields
       .map(
         (f) =>
@@ -99,7 +111,7 @@ export class SQLiteDriver extends BaseDriver<Database> {
 
   getOne(
     tableName: string,
-    filters: DatabaseFilter[]
+    filters: DatabaseFilterGroup
   ): Promise<DatabaseResult> {
     const where = this.toDatabaseWhere(filters);
     return this.fetchOne(
@@ -109,7 +121,7 @@ export class SQLiteDriver extends BaseDriver<Database> {
 
   getMany(
     tableName: string,
-    filters: DatabaseFilter[] = []
+    filters: DatabaseFilterGroup
   ): Promise<DatabaseResult[]> {
     const where = this.toDatabaseWhere(filters);
     return this.fetchMany(
@@ -117,7 +129,11 @@ export class SQLiteDriver extends BaseDriver<Database> {
     ) as Promise<DatabaseResult[]>;
   }
 
-  update(tableName: string, filters: DatabaseFilter[], payload: Payload): void {
+  update(
+    tableName: string,
+    filters: DatabaseFilterGroup,
+    payload: Payload
+  ): void {
     if (Object.keys(payload).length == 0) return;
 
     const updates = Object.entries(payload)
@@ -132,7 +148,7 @@ export class SQLiteDriver extends BaseDriver<Database> {
     );
   }
 
-  delete(tableName: string, filters: DatabaseFilter[]): void {
+  delete(tableName: string, filters: DatabaseFilterGroup): void {
     const where = this.toDatabaseWhere(filters);
     this.connection.exec(
       `DELETE FROM ${tableName}${where.length > 0 ? " WHERE " + where : ""}`

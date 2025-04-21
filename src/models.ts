@@ -1,6 +1,6 @@
 import { Database } from "./database";
 import { fields } from "./fields";
-import type { PartialRecord } from "./types";
+import type { Filter, PartialModel } from "./types";
 
 export type ModelConstructor = new () => Model;
 
@@ -13,21 +13,23 @@ class Manager<T extends Model, Y = Partial<Omit<T, "tableName" | "id">>> {
 
   async all(): Promise<Y[]> {
     const db: Database = await Database.getInstance();
-    return db.driver.getMany(db.getModelTableName(this.model), []) as Promise<
-      Y[]
-    >;
+    return db.driver.getMany(db.getModelTableName(this.model), {
+      filters: [],
+      operator: "and",
+    }) as Promise<Y[]>;
   }
 
-  async filter(filters: PartialRecord<keyof Y, any>): Promise<Y[]> {
+  async filter(filter: Filter<Y>): Promise<Y[]> {
     const db: Database = await Database.getInstance();
-    const dbFilters = db.filtersDictToDatabaseFilter(this.model, filters);
+    const dbFilters = db.filterToDatabaseFilter(this.model, filter);
+
     return db.driver.getMany(
       db.getModelTableName(this.model),
       dbFilters
     ) as Promise<Y[]>;
   }
 
-  async create(payload: PartialRecord<keyof Y, any>): Promise<Y> {
+  async create(payload: PartialModel<Y>): Promise<Y> {
     const db: Database = await Database.getInstance();
     const dbValues = db.entryToDatabaseValue(this.model, payload);
 
@@ -36,9 +38,9 @@ class Manager<T extends Model, Y = Partial<Omit<T, "tableName" | "id">>> {
     ]) as Promise<Y>;
   }
 
-  async delete(filters: PartialRecord<keyof Y, any> = {}) {
+  async delete(filters: PartialModel<Y> = {}) {
     const db: Database = await Database.getInstance();
-    const dbFilters = db.filtersDictToDatabaseFilter(this.model, filters);
+    const dbFilters = db.filterToDatabaseFilter(this.model, filters);
     return db.driver.delete(db.getModelTableName(this.model), dbFilters);
   }
 }
@@ -48,9 +50,21 @@ function createManager<T extends Model>(model: new () => T) {
 }
 
 class Model {
+  [key: string]: any;
+
   tableName: string | undefined;
 
   id = fields.integerField({ primaryKey: true, autoIncrement: true });
+
+  static new(data: PartialModel<typeof this> = {}) {
+    const cls = new this();
+    Object.entries(data).forEach(([key, value]) => {
+      cls[key] = value;
+      console.log(key, cls[key]);
+    });
+
+    return cls;
+  }
 }
 
 export const models = {

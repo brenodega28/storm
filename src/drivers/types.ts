@@ -9,11 +9,17 @@ export type FieldTypes =
   | "boolean";
 export type SupportedDrivers = "sqlite";
 export type FilterComparators = "=" | "is" | "ilike" | "like";
+export type FilterOperator = "or" | "and";
 
 export interface DatabaseFilter {
   field: string;
   comparator: FilterComparators;
   value: any;
+}
+
+export interface DatabaseFilterGroup {
+  filters: (DatabaseFilter | DatabaseFilterGroup)[];
+  operator?: FilterOperator;
 }
 
 export interface FieldConstraints {
