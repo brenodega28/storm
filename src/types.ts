@@ -4,7 +4,10 @@ export type PartialRecord<K extends keyof any, T> = {
   [P in K]?: T;
 };
 
-export type PartialModel<T> = PartialRecord<keyof T, any>;
+export type PartialModel<T> = Omit<
+  PartialRecord<keyof T, any>,
+  "tableName" | "id"
+>;
 
 export interface FilterGrouping<T> {
   filters: (PartialModel<T> | FilterGrouping<T>)[];

@@ -1,3 +1,4 @@
+import { models } from "../src/models";
 import { and, or } from "../src/query";
 import { database } from "./database";
 import { User } from "./mocks/models";
@@ -6,7 +7,7 @@ describe("Model tests", () => {
   describe("Manager tests", () => {
     beforeAll(async () => {
       database.createModelTableIfNotExists(User);
-      database.driver.delete("user", { filters: [] });
+      await database.driver.delete("user", { filters: [] });
     });
 
     test("It creates entries", async () => {
@@ -43,7 +44,7 @@ describe("Model tests", () => {
   describe("Filter tests", () => {
     beforeAll(async () => {
       database.createModelTableIfNotExists(User);
-      database.driver.delete("user", { filters: [] });
+      await User.objects.delete();
 
       await User.objects.create({ name: "Renan", age: 26 });
       await User.objects.create({ name: "Ana", age: 27 });
@@ -63,6 +64,24 @@ describe("Model tests", () => {
       );
 
       expect(result.length).toBe(1);
+    });
+  });
+
+  describe("Model tests", () => {
+    test("It creates model", () => {
+      const user = models.create(User, { name: "Tuca", age: 26 });
+
+      expect(user.id).toBeNull();
+      expect(user.name).toBe("Tuca");
+    });
+
+    test("It creates model", () => {
+      const user = models.create(User, { name: "Tuca", age: 26 });
+
+      user.create();
+
+      expect(user.id).toBeNull();
+      expect(user.name).toBe("Tuca");
     });
   });
 });

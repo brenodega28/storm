@@ -148,9 +148,10 @@ export class SQLiteDriver extends BaseDriver<Database> {
     );
   }
 
-  delete(tableName: string, filters: DatabaseFilterGroup): void {
+  async delete(tableName: string, filters: DatabaseFilterGroup) {
     const where = this.toDatabaseWhere(filters);
-    this.connection.exec(
+
+    await this.connection.exec(
       `DELETE FROM ${tableName}${where.length > 0 ? " WHERE " + where : ""}`
     );
   }
